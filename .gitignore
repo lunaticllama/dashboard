@@ -1,1 +1,3 @@
 __pycache__/
+# Client matter exports are confidential; never commit them (site is public)
+*.csv
