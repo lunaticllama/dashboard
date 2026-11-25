@@ -913,6 +913,8 @@
     (function () {
       const now   = new Date();
       const MAX_OFFSET = 6;
+      // Forward navigation runs through January 2028 (never less than MAX_OFFSET months)
+      const MAX_NEXT = Math.max(MAX_OFFSET, (2028 - now.getFullYear()) * 12 + (0 - now.getMonth()));
       const MONTHS = ['January','February','March','April','May','June',
                       'July','August','September','October','November','December'];
 
@@ -929,7 +931,7 @@
 
         document.getElementById('cal-month').textContent = `${MONTHS[month]} ${year}`;
         prev.disabled = offset <= -MAX_OFFSET;
-        next.disabled = offset >= MAX_OFFSET;
+        next.disabled = offset >= MAX_NEXT;
 
         grid.innerHTML = '';
         ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(n => {
@@ -956,7 +958,7 @@
       }
 
       prev.addEventListener('click', () => { if (offset > -MAX_OFFSET) { offset--; render(); } });
-      next.addEventListener('click', () => { if (offset < MAX_OFFSET)  { offset++; render(); } });
+      next.addEventListener('click', () => { if (offset < MAX_NEXT)    { offset++; render(); } });
       render();
     })();
 
