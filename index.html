@@ -504,7 +504,7 @@
     .dc-result .dc-small { margin-top: 14px; }
 
     /* ── Matter Lookup ── */
-    .matters-card { grid-column: 2 / -1; }
+    .matters-card { grid-column: span 2; }
     .matters-card [hidden] { display: none; }
     .mt-search {
       display: block;
@@ -665,7 +665,7 @@
 
     </div>
 
-    <!-- Tools · Quick Links · Ask Claude -->
+    <!-- Tools · Quick Links · WSJ -->
     <div class="dash-grid">
 
       <!-- Tools -->
@@ -737,24 +737,6 @@
         </a>
       </div>
 
-      <!-- Ask Claude -->
-      <div class="card claude-card">
-        <div class="card-label">Claude</div>
-        <form class="claude-form" id="claude-form">
-          <textarea class="claude-input" id="claude-input" rows="6"
-            placeholder="Ask anything…" aria-label="Prompt for Claude"></textarea>
-          <div class="claude-actions">
-            <span class="claude-hint">Enter to send · Shift+Enter for new line</span>
-            <button type="submit" class="claude-submit">Ask <span class="link-arrow">↗</span></button>
-          </div>
-        </form>
-      </div>
-
-    </div>
-
-    <!-- WSJ · NY Times -->
-    <div class="dash-grid">
-
       <!-- WSJ Headlines -->
       <div class="card headlines-card">
         <div class="card-label">Wall Street Journal</div>
@@ -763,34 +745,10 @@
         </div>
       </div>
 
-      <!-- NYT Headlines -->
-      <div class="card headlines-card">
-        <div class="card-label">New York Times</div>
-        <div id="nyt-content">
-          <div class="headlines-loading">Loading headlines…</div>
-        </div>
-      </div>
-
-      <!-- TPM Editors' Blog -->
-      <div class="card headlines-card">
-        <div class="card-label">TPM Editor’s Blog</div>
-        <div id="tpm-content">
-          <div class="headlines-loading">Loading headlines…</div>
-        </div>
-      </div>
-
     </div>
 
-    <!-- Markets · Matter Lookup -->
+    <!-- Matter Lookup · Ask Claude -->
     <div class="dash-grid">
-
-      <!-- Market Snapshot -->
-      <div class="card market-card">
-        <div class="card-label">Markets</div>
-        <div id="market-content">
-          <div class="market-loading">Loading…</div>
-        </div>
-      </div>
 
       <!-- Matter Lookup (list is committed encrypted; decrypted in the browser) -->
       <div class="card matters-card" id="matters-card">
@@ -810,6 +768,19 @@
             <button type="button" class="dc-small" id="mt-lock" hidden>Lock</button>
           </span>
         </div>
+      </div>
+
+      <!-- Ask Claude -->
+      <div class="card claude-card">
+        <div class="card-label">Claude</div>
+        <form class="claude-form" id="claude-form">
+          <textarea class="claude-input" id="claude-input" rows="6"
+            placeholder="Ask anything…" aria-label="Prompt for Claude"></textarea>
+          <div class="claude-actions">
+            <span class="claude-hint">Enter to send · Shift+Enter for new line</span>
+            <button type="submit" class="claude-submit">Ask <span class="link-arrow">↗</span></button>
+          </div>
+        </form>
       </div>
 
     </div>
@@ -864,6 +835,35 @@
 
           </div>
           <div class="dc-result" id="dc-result" aria-live="polite"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- NY Times · TPM · Markets -->
+    <div class="dash-grid">
+
+      <!-- NYT Headlines -->
+      <div class="card headlines-card">
+        <div class="card-label">New York Times</div>
+        <div id="nyt-content">
+          <div class="headlines-loading">Loading headlines…</div>
+        </div>
+      </div>
+
+      <!-- TPM Editors' Blog -->
+      <div class="card headlines-card">
+        <div class="card-label">TPM Editor’s Blog</div>
+        <div id="tpm-content">
+          <div class="headlines-loading">Loading headlines…</div>
+        </div>
+      </div>
+
+      <!-- Market Snapshot -->
+      <div class="card market-card">
+        <div class="card-label">Markets</div>
+        <div id="market-content">
+          <div class="market-loading">Loading…</div>
         </div>
       </div>
 
