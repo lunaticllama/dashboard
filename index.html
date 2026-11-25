@@ -505,6 +505,7 @@
 
     /* ── Matter Lookup ── */
     .matters-card { grid-column: 1 / -1; }
+    .matters-card [hidden] { display: none; }
     .mt-search {
       display: block;
       width: 100%;
@@ -524,8 +525,8 @@
     .mt-results { list-style: none; margin-top: 6px; }
     .mt-row {
       display: grid;
-      grid-template-columns: 8.5em 1fr auto;
-      gap: 4px 20px;
+      grid-template-columns: max-content 1fr;
+      gap: 4px 24px;
       align-items: baseline;
       padding: 9px 0;
       border-bottom: 1px dotted var(--rule);
@@ -547,7 +548,9 @@
     .mt-code:focus-visible { outline: 2px solid var(--margin); outline-offset: 3px; }
     .mt-desc { font-family: var(--serif); font-size: .98rem; line-height: 1.4; color: var(--ink); }
     .mt-client { font-size: .78rem; color: var(--ink-2); margin-top: 2px; }
-    .mt-activity { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .mt-unlock { display: flex; align-items: flex-end; gap: 16px; max-width: 460px; }
+    .mt-unlock .mt-search { flex: 1; }
+    .mt-unlock .dc-small { margin-bottom: 6px; }
     .mt-msg {
       font-family: var(--serif);
       font-style: italic;
@@ -568,8 +571,6 @@
     .mt-meta { font-family: var(--serif); font-style: italic; font-size: .78rem; color: var(--muted); }
     .mt-actions { display: flex; gap: 18px; }
     .mt-actions .dc-small { margin-bottom: 0; }
-    .matters-card.dragover .mt-search { border-color: var(--margin); }
-    .matters-card.dragover { outline: 1px dashed var(--margin); outline-offset: 6px; }
 
     /* ── Quick links: an index of authorities ── */
     .links-grid {
@@ -614,8 +615,7 @@
       .dc-body { grid-template-columns: 1fr; gap: 18px; }
       .dc-units { grid-template-columns: repeat(2, 1fr); }
       .dc-result { padding: 16px 0 0; border-left: none; border-top: 1px dotted var(--rule); }
-      .mt-row { grid-template-columns: 1fr auto; }
-      .mt-main { grid-column: 1 / -1; grid-row: 2; }
+      .mt-row { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; }
@@ -839,21 +839,25 @@
 
     </div>
 
-    <!-- Matter Lookup (list lives only in this browser; never committed) -->
+    <!-- Matter Lookup (list is committed encrypted; decrypted in the browser) -->
     <div class="dash-grid">
       <div class="card matters-card" id="matters-card">
         <div class="card-label">Matter Lookup</div>
+        <form class="mt-unlock" id="mt-unlock" hidden>
+          <input type="text" name="username" value="matters" autocomplete="username" hidden>
+          <input type="password" class="mt-search" id="mt-pass" autocomplete="current-password"
+            placeholder="Passphrase to unlock matter list" aria-label="Matter list passphrase">
+          <button type="submit" class="dc-small">Unlock</button>
+        </form>
         <input type="search" class="mt-search" id="mt-search" autocomplete="off" spellcheck="false"
-          placeholder="Search by matter, client, or number…" aria-label="Search matters">
+          placeholder="Search by matter, client, or number…" aria-label="Search matters" hidden>
         <ul class="mt-results" id="mt-results" aria-live="polite"></ul>
         <div class="mt-footer">
-          <span class="mt-meta" id="mt-meta"></span>
+          <span class="mt-meta" id="mt-meta">Loading…</span>
           <span class="mt-actions">
-            <button type="button" class="dc-small" id="mt-load">Load matter list</button>
-            <button type="button" class="dc-small" id="mt-clear" hidden>Clear</button>
+            <button type="button" class="dc-small" id="mt-lock" hidden>Lock</button>
           </span>
         </div>
-        <input type="file" id="mt-file" accept=".csv,text/csv" hidden>
       </div>
     </div>
 
@@ -1322,70 +1326,52 @@
     })();
 
     // ── Matter Lookup ─────────────────────────────────────
-    // The site is public, so the client list is never shipped with the page.
-    // It is loaded from the user's CSV export and kept in this browser's localStorage.
+    // The site is public, so the matter list is committed only encrypted
+    // (data/matters.enc.json, synced weekly from Google Sheets by
+    // .github/workflows/fetch-matters.yml). It is decrypted here with a
+    // passphrase; the derived key is remembered in this browser.
 
     (function () {
       const $ = id => document.getElementById(id);
-      const card = $('matters-card'), search = $('mt-search'), results = $('mt-results');
-      const meta = $('mt-meta'), loadBtn = $('mt-load'), clearBtn = $('mt-clear'), file = $('mt-file');
-      const KEY = 'dashboard-matters-v1';
+      const search = $('mt-search'), results = $('mt-results'), meta = $('mt-meta');
+      const unlock = $('mt-unlock'), pass = $('mt-pass'), lockBtn = $('mt-lock');
+      const KEY_STORE = 'dashboard-matters-key-v1';
       const MAX_SHOWN = 15;
+      let envelope = null;
       let matters = [];
-      let loadedAt = null;
+      let updated = null;
 
-      // RFC 4180-ish: quoted fields, doubled quotes, CRLF/LF
-      function parseCSV(text) {
-        const rows = [];
-        let row = [], field = '', q = false;
-        text = text.replace(/^﻿/, '');
-        for (let i = 0; i < text.length; i++) {
-          const c = text[i];
-          if (q) {
-            if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; }
-            else field += c;
-          } else if (c === '"') q = true;
-          else if (c === ',') { row.push(field); field = ''; }
-          else if (c === '\n' || c === '\r') {
-            if (c === '\r' && text[i + 1] === '\n') i++;
-            row.push(field); rows.push(row); row = []; field = '';
-          } else field += c;
-        }
-        if (field || row.length) { row.push(field); rows.push(row); }
-        return rows.filter(r => r.some(f => f.trim()));
+      try { localStorage.removeItem('dashboard-matters-v1'); } catch {}   // old CSV-upload store
+
+      const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+      const b64   = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+      const pad   = (s, n) => String(s).padStart(n, '0');
+
+      async function deriveKey(passphrase) {
+        const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase),
+          'PBKDF2', false, ['deriveKey']);
+        return crypto.subtle.deriveKey(
+          { name: 'PBKDF2', hash: 'SHA-256', salt: unb64(envelope.salt), iterations: envelope.iter },
+          base, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
       }
 
-      function toMatters(rows) {
-        const head = rows[0].map(h => h.trim().toLowerCase());
-        const col = (...names) => head.findIndex(h => names.includes(h));
-        const ci = col('client no.', 'client no', 'client number', 'client');
-        const cn = col('client name');
-        const mi = col('matter no.', 'matter no', 'matter number', 'matter');
-        const md = col('matter description', 'description', 'matter name');
-        const la = col('last activity');
-        if (ci < 0 || mi < 0 || md < 0) throw new Error('Missing Client No., Matter No., or Matter Description column.');
-        return rows.slice(1).map(r => {
-          const m = {
-            client: (r[ci] || '').trim(), clientName: cn < 0 ? '' : (r[cn] || '').trim(),
-            matter: (r[mi] || '').trim(), desc: (r[md] || '').trim(),
-            last: la < 0 ? '' : (r[la] || '').trim(),
-          };
-          m.code = `${m.client}-${m.matter}`;
-          m.hay  = [m.code, m.client, m.matter, m.clientName, m.desc].join(' ').toLowerCase();
-          const [mm, dd, yy] = m.last.split('/').map(Number);
-          m.lastTs = yy ? Date.UTC(yy, mm - 1, dd) : 0;
-          return m;
-        }).filter(m => m.client && m.matter);
+      async function decrypt(key) {
+        const plain = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: unb64(envelope.iv) }, key, unb64(envelope.ct));
+        const data = JSON.parse(new TextDecoder().decode(plain));
+        updated = data.updated;
+        matters = data.matters.map(([client, matter, clientName, desc]) => {
+          const code = `${pad(client, 6)}-${pad(matter, 6)}`;
+          return { code, clientName, desc,
+            hay: [code, client, matter, `${client}-${matter}`, clientName, desc].join(' ').toLowerCase() };
+        });
       }
 
-      function save(csvText) {
-        try { localStorage.setItem(KEY, JSON.stringify({ loadedAt, csv: csvText })); } catch {}
-      }
-      function restore() {
+      function savedKey() {
         try {
-          const s = JSON.parse(localStorage.getItem(KEY) || 'null');
-          if (s?.csv) { matters = toMatters(parseCSV(s.csv)); loadedAt = s.loadedAt; }
-        } catch { matters = []; }
+          const s = JSON.parse(localStorage.getItem(KEY_STORE) || 'null');
+          return s && s.salt === envelope.salt ? s.key : null;
+        } catch { return null; }
       }
 
       function msg(text) {
@@ -1419,30 +1405,33 @@
         client.className = 'mt-client';
         client.textContent = m.clientName;
         main.append(desc, client);
-        const act = document.createElement('div');
-        act.className = 'mt-activity';
-        act.textContent = m.last ? 'Last activity ' + m.last : '';
-        li.append(code, main, act);
+        li.append(code, main);
         return li;
       }
 
-      function render() {
-        const loaded = matters.length > 0;
-        search.disabled = !loaded;
-        clearBtn.hidden = !loaded;
-        loadBtn.textContent = loaded ? 'Replace list' : 'Load matter list';
-        meta.textContent = loaded
-          ? `${matters.length.toLocaleString()} matters` + (loadedAt ? ' · loaded ' +
-              new Date(loadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '')
-            + ' · stored in this browser only'
-          : 'Load your Client Matter List CSV export (or drop it here). It stays in this browser.';
+      function showLocked(note) {
+        matters = [];
+        unlock.hidden = false;
+        search.hidden = true;
+        lockBtn.hidden = true;
+        results.innerHTML = '';
+        meta.textContent = note || 'Enter the passphrase once; this browser will remember it.';
+      }
 
-        if (!loaded) { results.innerHTML = ''; return; }
+      function showUnlocked() {
+        unlock.hidden = true;
+        search.hidden = false;
+        lockBtn.hidden = false;
+        meta.textContent = `${matters.length.toLocaleString()} matters`
+          + (updated ? ' · synced ' + new Date(updated).toLocaleDateString('en-US',
+              { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+        render();
+      }
+
+      function render() {
         const terms = search.value.toLowerCase().split(/\s+/).filter(Boolean);
         if (!terms.length) { results.innerHTML = ''; return; }
-
-        const hits = matters.filter(m => terms.every(t => m.hay.includes(t)))
-          .sort((a, b) => b.lastTs - a.lastTs);
+        const hits = matters.filter(m => terms.every(t => m.hay.includes(t)));
         if (!hits.length) { msg('No matching matters.'); return; }
         results.innerHTML = '';
         hits.slice(0, MAX_SHOWN).forEach(m => results.appendChild(row(m)));
@@ -1454,40 +1443,55 @@
         }
       }
 
-      function ingest(f) {
-        if (!f) return;
-        f.text().then(text => {
-          const parsed = toMatters(parseCSV(text));
-          if (!parsed.length) throw new Error('No matters found in that file.');
-          matters = parsed;
-          loadedAt = Date.now();
-          save(text);
-          render();
+      unlock.addEventListener('submit', async e => {
+        e.preventDefault();
+        if (!pass.value) { pass.focus(); return; }
+        meta.textContent = 'Unlocking…';
+        try {
+          const key = await deriveKey(pass.value);
+          await decrypt(key);
+          const raw = await crypto.subtle.exportKey('raw', key);
+          try { localStorage.setItem(KEY_STORE, JSON.stringify({ salt: envelope.salt, key: b64(raw) })); } catch {}
+          pass.value = '';
+          showUnlocked();
           search.focus();
-        }).catch(err => { msg('Could not read that file: ' + err.message); });
-      }
-
-      loadBtn.addEventListener('click', () => file.click());
-      file.addEventListener('change', () => { ingest(file.files[0]); file.value = ''; });
-      clearBtn.addEventListener('click', () => {
-        if (!confirm('Remove the matter list from this browser?')) return;
-        try { localStorage.removeItem(KEY); } catch {}
-        matters = []; loadedAt = null; search.value = '';
-        render();
+        } catch {
+          showLocked('Incorrect passphrase.');
+          pass.select();
+        }
       });
+
+      lockBtn.addEventListener('click', () => {
+        try { localStorage.removeItem(KEY_STORE); } catch {}
+        search.value = '';
+        showLocked();
+      });
+
       search.addEventListener('input', render);
       search.addEventListener('keydown', e => { if (e.key === 'Escape') { search.value = ''; render(); } });
 
-      card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('dragover'); });
-      card.addEventListener('dragleave', e => { if (!card.contains(e.relatedTarget)) card.classList.remove('dragover'); });
-      card.addEventListener('drop', e => {
-        e.preventDefault();
-        card.classList.remove('dragover');
-        ingest(e.dataTransfer.files[0]);
-      });
-
-      restore();
-      render();
+      (async function init() {
+        try {
+          const r = await fetch('/data/matters.enc.json', { cache: 'no-cache' });
+          if (!r.ok) throw new Error('missing');
+          envelope = await r.json();
+        } catch {
+          meta.textContent = 'Matter list not synced yet.';
+          return;
+        }
+        const k = savedKey();
+        if (k) {
+          try {
+            const key = await crypto.subtle.importKey('raw', unb64(k), 'AES-GCM', false, ['decrypt']);
+            await decrypt(key);
+            showUnlocked();
+            return;
+          } catch {
+            try { localStorage.removeItem(KEY_STORE); } catch {}
+          }
+        }
+        showLocked();
+      })();
     })();
 
     loadWeather();

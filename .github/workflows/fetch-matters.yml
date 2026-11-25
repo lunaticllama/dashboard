@@ -1,0 +1,36 @@
+name: Sync Matter List
+
+on:
+  schedule:
+    - cron: '0 10 * * 1'   # Mondays ~6 AM ET (UTC; shifts an hour with DST)
+  workflow_dispatch:       # Run manually from the Actions tab after editing the sheet
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install --quiet google-auth requests cryptography
+
+      - name: Fetch and encrypt matter list
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          MATTERS_PASSPHRASE: ${{ secrets.MATTERS_PASSPHRASE }}
+        run: python3 .github/scripts/fetch-matters.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/matters.enc.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "Update encrypted matter list [skip ci]"
+          git pull --rebase
+          git push
