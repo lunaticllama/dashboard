@@ -1445,18 +1445,23 @@
 
       unlock.addEventListener('submit', async e => {
         e.preventDefault();
-        if (!pass.value) { pass.focus(); return; }
+        const phrase = pass.value.trim();   // the sync script trims the secret the same way
+        if (!phrase) { pass.focus(); return; }
         meta.textContent = 'Unlocking…';
         try {
-          const key = await deriveKey(pass.value);
+          const key = await deriveKey(phrase);
           await decrypt(key);
           const raw = await crypto.subtle.exportKey('raw', key);
           try { localStorage.setItem(KEY_STORE, JSON.stringify({ salt: envelope.salt, key: b64(raw) })); } catch {}
           pass.value = '';
           showUnlocked();
           search.focus();
-        } catch {
-          showLocked('Incorrect passphrase.');
+        } catch (err) {
+          console.error('Matter list unlock failed:', err);
+          // AES-GCM reports a wrong key as OperationError; anything else is a real fault.
+          showLocked(err && err.name === 'OperationError'
+            ? `Incorrect passphrase (${phrase.length} characters entered).`
+            : `Could not unlock: ${err && err.message || err}`);
           pass.select();
         }
       });

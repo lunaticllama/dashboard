@@ -89,10 +89,15 @@ def load_existing(passphrase):
 
 
 def main():
-    passphrase = os.environ.get('MATTERS_PASSPHRASE', '')
+    raw = os.environ.get('MATTERS_PASSPHRASE', '')
+    passphrase = raw.strip()   # the dashboard trims input the same way
     if not passphrase or not os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON'):
         print('Matter sync secrets not configured; skipping.')
         return
+    # Diagnostics only (never the value): helps when the browser says "incorrect passphrase".
+    print(f'Passphrase: {len(passphrase)} chars'
+          + (f' (stripped {len(raw) - len(passphrase)} whitespace chars from the secret)' if raw != passphrase else '')
+          + ('' if passphrase.isascii() else '; contains non-ASCII characters'))
 
     matters = to_matters(fetch_rows())
     salt, previous = load_existing(passphrase)
