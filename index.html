@@ -379,7 +379,7 @@
     .claude-submit:focus-visible { outline: 2px solid var(--margin); outline-offset: 3px; }
 
     /* ── Date Calculator ── */
-    .datecalc-card { grid-column: 2 / -1; }
+    .datecalc-card { grid-column: 1 / -1; }
     .dc-modes {
       display: flex;
       gap: 20px;
@@ -504,7 +504,7 @@
     .dc-result .dc-small { margin-top: 14px; }
 
     /* ── Matter Lookup ── */
-    .matters-card { grid-column: 1 / -1; }
+    .matters-card { grid-column: 2 / -1; }
     .matters-card [hidden] { display: none; }
     .mt-search {
       display: block;
@@ -601,7 +601,7 @@
 
     @media (max-width: 800px) {
       .dash-grid { grid-template-columns: 1fr 1fr; }
-      .stoic-card, .tools-card, .datecalc-card { grid-column: 1 / -1; }
+      .stoic-card, .tools-card, .datecalc-card, .matters-card { grid-column: 1 / -1; }
     }
     @media (max-width: 560px) {
       body { padding: 0; }
@@ -729,6 +729,12 @@
         <a class="link-btn" href="https://pacer.uscourts.gov/file-case/court-cmecf-lookup" target="_blank" rel="noopener">
           PACER <span class="link-arrow">↗</span>
         </a>
+        <a class="link-btn" href="https://script.google.com/macros/s/AKfycbwxVTA07lDPmjuala7-lAQAtQvJodvVTV3apHhXRQytQyUebKAYtEbVpsaXqS8aPGxe/exec" target="_blank" rel="noopener">
+          Finance Dashboard <span class="link-arrow">↗</span>
+        </a>
+        <a class="link-btn" href="https://recipes.philipmtaylor.com/" target="_blank" rel="noopener">
+          Recipes <span class="link-arrow">↗</span>
+        </a>
       </div>
 
       <!-- Ask Claude -->
@@ -775,7 +781,7 @@
 
     </div>
 
-    <!-- Markets · Date Calculator -->
+    <!-- Markets · Matter Lookup -->
     <div class="dash-grid">
 
       <!-- Market Snapshot -->
@@ -786,7 +792,31 @@
         </div>
       </div>
 
-      <!-- Date Calculator -->
+      <!-- Matter Lookup (list is committed encrypted; decrypted in the browser) -->
+      <div class="card matters-card" id="matters-card">
+        <div class="card-label">Matter Lookup</div>
+        <form class="mt-unlock" id="mt-unlock" hidden>
+          <input type="text" name="username" value="matters" autocomplete="username" hidden>
+          <input type="password" class="mt-search" id="mt-pass" autocomplete="current-password"
+            placeholder="Passphrase to unlock matter list" aria-label="Matter list passphrase">
+          <button type="submit" class="dc-small">Unlock</button>
+        </form>
+        <input type="search" class="mt-search" id="mt-search" autocomplete="off" spellcheck="false"
+          placeholder="Search by matter, client, or number…" aria-label="Search matters" hidden>
+        <ul class="mt-results" id="mt-results" aria-live="polite"></ul>
+        <div class="mt-footer">
+          <span class="mt-meta" id="mt-meta">Loading…</span>
+          <span class="mt-actions">
+            <button type="button" class="dc-small" id="mt-lock" hidden>Lock</button>
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Date Calculator -->
+    <div class="dash-grid">
+
       <div class="card datecalc-card">
         <div class="card-label">Date Calculator</div>
         <div class="dc-modes" role="tablist">
@@ -837,28 +867,6 @@
         </div>
       </div>
 
-    </div>
-
-    <!-- Matter Lookup (list is committed encrypted; decrypted in the browser) -->
-    <div class="dash-grid">
-      <div class="card matters-card" id="matters-card">
-        <div class="card-label">Matter Lookup</div>
-        <form class="mt-unlock" id="mt-unlock" hidden>
-          <input type="text" name="username" value="matters" autocomplete="username" hidden>
-          <input type="password" class="mt-search" id="mt-pass" autocomplete="current-password"
-            placeholder="Passphrase to unlock matter list" aria-label="Matter list passphrase">
-          <button type="submit" class="dc-small">Unlock</button>
-        </form>
-        <input type="search" class="mt-search" id="mt-search" autocomplete="off" spellcheck="false"
-          placeholder="Search by matter, client, or number…" aria-label="Search matters" hidden>
-        <ul class="mt-results" id="mt-results" aria-live="polite"></ul>
-        <div class="mt-footer">
-          <span class="mt-meta" id="mt-meta">Loading…</span>
-          <span class="mt-actions">
-            <button type="button" class="dc-small" id="mt-lock" hidden>Lock</button>
-          </span>
-        </div>
-      </div>
     </div>
 
   </div>
