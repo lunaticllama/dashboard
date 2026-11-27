@@ -1,10 +1,15 @@
 {
-  "updated": "2026-11-26T20:04:19.305097+00:00",
+  "updated": "2026-11-27T03:35:18.765840+00:00",
   "items": [
+    {
+      "title": "New Yorkers and Tourists Try to Salvage a Parade Day Postponed by Rain",
+      "link": "https://www.nytimes.com/2026/11/26/nyregion/macys-thanksgiving-day-parade-empty-streets.html",
+      "pubDate": "Thu, 26 Nov 2026 20:53:41 +0000"
+    },
     {
       "title": "Macy\u2019s Thanksgiving Day Parade Upends Plans and Adds Costs for Marching Bands",
       "link": "https://www.nytimes.com/2026/11/25/nyregion/macys-thanksgiving-day-parade-marching-bands.html",
-      "pubDate": "Thu, 26 Nov 2026 19:57:47 +0000"
+      "pubDate": "Thu, 26 Nov 2026 20:21:00 +0000"
     },
     {
       "title": "Thanksgiving Parade Balloons Are Deflated in New York",
@@ -12,19 +17,14 @@
       "pubDate": "Thu, 26 Nov 2026 14:06:46 +0000"
     },
     {
+      "title": "After the Iowa Detonation, a Family Gathered for an Unusual Thanksgiving",
+      "link": "https://www.nytimes.com/2026/11/26/us/iowa-detonation-family-thanksgiving.html",
+      "pubDate": "Fri, 27 Nov 2026 00:33:25 +0000"
+    },
+    {
       "title": "The Army Knew Much Earlier of the Explosive Risk in Iowa, Evidence Suggests",
       "link": "https://www.nytimes.com/2026/11/26/us/iowa-lead-ammunition-stockpile-history.html",
       "pubDate": "Thu, 26 Nov 2026 16:50:50 +0000"
-    },
-    {
-      "title": "Trump Rejoiced in the Market\u2019s Nvidia Surge. It Didn\u2019t Last Long.",
-      "link": "https://www.nytimes.com/2026/11/25/us/politics/trump-nvidia-stock-market.html",
-      "pubDate": "Thu, 26 Nov 2026 01:53:20 +0000"
-    },
-    {
-      "title": "Nvidia Halts Sales to Southeast Asia as U.S. Tightens China Restrictions",
-      "link": "https://www.nytimes.com/2026/11/26/business/nvidia-southeast-asia-sales.html",
-      "pubDate": "Thu, 26 Nov 2026 12:04:01 +0000"
     }
   ]
 }
